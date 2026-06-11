@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QSNICH Segmental Analysis CHD</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .controls-panel {
+            flex: 1;
+            min-width: 320px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .visual-panel {
+            flex: 1.2;
+            min-width: 450px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .checkbox-container {
+            background-color: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #ffa726;
+            margin-bottom: 15px;
+        }
+        .checkbox-group {
+            margin-bottom: 10px;
+        }
+        .checkbox-group:last-child {
+            margin-bottom: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #fff;
+            font-size: 1rem;
+        }
+        canvas {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+        .notation-badge {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #e8f4fd;
+            color: #1d88e5;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            min-width: 80px;
+            flex: 1;
+        }
+        .btn-primary { background-color: #1d88e5; color: white; }
+        .btn-secondary { background-color: #78909c; color: white; }
+        .btn-warning { background-color: #ffa726; color: white; }
+        .btn-danger { background-color: #e53935; color: white; }
+    </style>
+</head>
+<body>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1>QSNICH Segmental Analysis CHD</h1>
+        <p>แผนภาพจำลองสรีรวิทยาหัวใจพิการแต่กำเนิด</p>
+    </div>
+
+    <div class="container">
+        <div class="controls-panel">
+            <h2>1. Segmental Inputs</h2>
+            
+            <div class="preset-buttons">
+                <button class="btn btn-secondary" onclick="applyPreset('normal')">Normal</button>
+                <button class="btn btn-primary" onclick="applyPreset('dtga')">d-TGA</button>
+                <button class="btn btn-primary" style="background-color: #0288d1;" onclick="applyPreset('cctga')">ccTGA</button>
+                <button class="btn btn-warning" onclick="applyPreset('dorv')">DORV</button>
+                <button class="btn btn-danger" onclick="applyPreset('paivs')">PA/IVS</button>
+                <button class="btn btn-danger" onclick="applyPreset('pavsd')">PA/VSD</button>
+            </div>
+            <div class="preset-buttons" style="margin-top: -10px;">
+                <button class="btn btn-warning" style="background-color: #e65100; max-width: 90px;" onclick="applyPreset('tof_case')">TOF</button>
+            </div>
+
+            <div class="form-group">
+                <label for="situs">1. Atrial Situs (Situs)</label>
+                <select id="situs" onchange="drawHeart()">
+                    <option value="S">Situs Solitus (S) - RA Right, LA Left</option>
+                    <option value="I">Situs Inversus (I) - RA Left, LA Right</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="loop">2. Ventricular Loop (Loop)</label>
+                <select id="loop" onchange="drawHeart()">
+                    <option value="D">D-Loop (RV Right, LV Left)</option>
+                    <option value="L">L-Loop (RV Left, LV Right)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="av">3. AV Connection (ลิ้นหัวใจกั้นห้อง)</label>
+                <select id="av" onchange="drawHeart()">
+                    <option value="concordant">Concordant (ห้องบน-ล่างตรงกัน)</option>
+                    <option value="discordant">Discordant (ห้องบน-ล่างสลับไขว้ฝั่ง)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="va">4. VA Connection (ทางออกเส้นเลือดใหญ่)</label>
+                <select id="va" onchange="onVAChange()">
+                    <option value="concordant">Concordant (LV->Ao, RV->PA) - ปกติ</option>
+                    <option value="discordant">Discordant (RV->Ao, LV->PA) - TGA</option>
+                    <option value="dorv">Double Outlet RV (Both Ao & PA -> RV)</option>
+                    <option value="pa_ivs">Pulmonary Atresia / IVS (PA ตัน ไม่มี VSD)</option>
+                    <option value="pa_vsd">Pulmonary Atresia / VSD (PA ตัน มี VSD)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="vessels">5. Great Arteries Relationship</label>
+                <select id="vessels" onchange="drawHeart()">
+                    <option value="normal">Normal (Ao อยู่เยื้องหลัง/ขวา) - [S]</option>
+                    <option value="d-loop">D-Malposition (Ao อยู่หน้า/ขวา) - [D]</option>
+                    <option value="l-loop">L-Malposition (Ao อยู่หน้า/ซ้าย) - [L]</option>
+                </select>
+            </div>
+
+            <h3>2. Associated Defects & Obstructions</h3>
+            <div class="checkbox-container">
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="asdCheck" onchange="drawHeart()">
+                        <span>Atrial Septal Defect (ASD)</span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="vsdCheck" onchange="drawHeart()">
+                        <span>Ventricular Septal Defect (VSD)</span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="pdaCheck" onchange="drawHeart()">
+                        <span>Patent Ductus Arteriosus (PDA)</span>
+                    </label>
+                </div>
+                <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 10px 0;">
+                <div class="checkbox-group">
+                    <label class="checkbox-label" style="color: #c62828;">
+                        <input type="checkbox" id="psCheck" onchange="onchange="drawHeart()"">
+                        <span>Pulmonary Stenosis (PS ตีบ)</span>
+                    </label>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label" style="color: #c62828;">
+                        <input type="checkbox" id="asCheck" onchange="onchange="drawHeart()"">
+                        <span>Aortic Stenosis (AS ตีบ)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="visual-panel">
+            <h2>3. Anatomical Block Diagram</h2>
+            <canvas id="heartCanvas" width="440" height="480"></canvas>
+            <div class="notation-badge" id="notationDisplay">{S, D, S}</div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #666; text-align: center;">
+                <span style="color: #ff3333; font-weight: bold;">■ Systemic (Ao)</span> | 
+                <span style="color: #3366ff; font-weight: bold;">■ Pulmonary (PA)</span> |
+                <span style="color: #9c27b0; font-weight: bold;">■ Mixed Blood (เลือดผสม)</span><br>
+                <span style="color: #e65100; font-weight: bold;">○ วงกลมส้ม = จุดวิกฤต / Obstruction</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function onVAChange() {
+            const va = document.getElementById('va').value;
+            if (va === 'pa_ivs') {
+                document.getElementById('asdCheck').checked = true;
+                document.getElementById('vsdCheck').checked = false;
+            } else if (va === 'pa_vsd') {
+                document.getElementById('asdCheck').checked = false;
+                document.getElementById('vsdCheck').checked = true;
+            }
+            drawHeart();
+        }
+
+        function applyPreset(type) {
+            document.getElementById('asdCheck').checked = false;
+            document.getElementById('vsdCheck').checked = false;
+            document.getElementById('pdaCheck').checked = false;
+            document.getElementById('psCheck').checked = false;
+            document.getElementById('asCheck').checked = false;
+
+            if(type === 'normal') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'concordant';
+                document.getElementById('vessels').value = 'normal';
+            } else if(type === 'dtga') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'discordant';
+                document.getElementById('vessels').value = 'd-loop';
+            } else if(type === 'cctga') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'L';          
+                document.getElementById('av').value = 'discordant';    
+                document.getElementById('va').value = 'discordant';    
+                document.getElementById('vessels').value = 'l-loop';   
+            } else if(type === 'dorv') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'dorv';
+                document.getElementById('vessels').value = 'd-loop';
+                document.getElementById('vsdCheck').checked = true;
+            } else if(type === 'paivs') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'pa_ivs';
+                document.getElementById('vessels').value = 'normal';
+                document.getElementById('asdCheck').checked = true;
+                document.getElementById('pdaCheck').checked = true;
+            } else if(type === 'pavsd') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'pa_vsd';
+                document.getElementById('vessels').value = 'normal';
+                document.getElementById('vsdCheck').checked = true;
+                document.getElementById('pdaCheck').checked = true;
+            } else if(type === 'tof_case') {
+                document.getElementById('situs').value = 'S';
+                document.getElementById('loop').value = 'D';
+                document.getElementById('av').value = 'concordant';
+                document.getElementById('va').value = 'concordant';
+                document.getElementById('vessels').value = 'normal';
+                document.getElementById('vsdCheck').checked = true; 
+                document.getElementById('psCheck').checked = true;  
+            }
+            drawHeart();
+        }
+
+        function drawHeart() {
+            const situs = document.getElementById('situs').value;
+            const loop = document.getElementById('loop').value;
+            const av = document.getElementById('av').value;
+            const va = document.getElementById('va').value;
+            const vessels = document.getElementById('vessels').value;
+            const hasASD = document.getElementById('asdCheck').checked;
+            const hasVSD = document.getElementById('vsdCheck').checked;
+            const hasPDA = document.getElementById('pdaCheck').checked;
+            const hasPS = document.getElementById('psCheck').checked;
+            const hasAS = document.getElementById('asCheck').checked;
+
+            // 🧠 คำนวณรหัสสากลอักษรตัวที่ 3 ดึงตามค่าดรอปดาวน์ความสัมพันธ์หลอดเลือด (Vessels Relationship) โดยตรงอย่างแม่นยำ
+            let vesselSign = 'S'; 
+            if (vessels === 'd-loop') vesselSign = 'D';
+            else if (vessels === 'l-loop') vesselSign = 'L';
+
+            document.getElementById('notationDisplay').innerText = `{${situs}, ${loop}, ${vesselSign}}`;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const blockW = 120;
+            const blockH = 90;
+            const atriumY = 110;     
+            const ventricleY = 270;  
+
+            let raX = 90, laX = 230;
+            if (situs === 'I') { raX = 230; laX = 90; }
+
+            let rvX = 90, lvX = 230;
+            if (loop === 'L') { rvX = 230; lvX = 90; }
+
+            // ========================================================
+            // ⚖️ ระบบคำนวณเฉดสีเลือดตามสรีรวิทยา
+            // ========================================================
+            let raBg = "#e3f2fd", raBorder = "#1565c0";
+            let laBg = "#ffebee", laBorder = "#c62828";
+            let rvBg = "#bbdefb", rvBorder = "#0d47a1", rvText = "ขับเคลื่อนระบบ Pulmonary";
+            let lvBg = "#ffebee", lvBorder = "#c62828"; 
+
+            let aoColor = "#ff3333"; 
+            let paColor = "#3366ff"; 
+
+            if (va === 'dorv') {
+                rvBg = "#e1bee7"; rvBorder = "#4a148c"; rvText = "เลือดผสม (Mixed Blood)";
+                aoColor = "#9c27b0"; paColor = "#9c27b0";
+            } 
+            else if (va === 'pa_ivs') {
+                laBg = "#e1bee7"; laBorder = "#4a148c";
+                lvBg = "#e1bee7"; lvBorder = "#4a148c";
+                aoColor = "#9c27b0";
+                rvText = "ห้องตันความดันสูง (PA/IVS)";
+                paColor = hasPDA ? "#9c27b0" : "#78909c"; 
+            } 
+            else if (va === 'pa_vsd') {
+                lvBg = "#e1bee7"; lvBorder = "#4a148c";
+                rvBg = "#e1bee7"; rvBorder = "#4a148c"; 
+                aoColor = "#9c27b0";
+                rvText = "เลือดผสมไหลทะลุผ่าน VSD";
+                paColor = hasPDA ? "#9c27b0" : "#78909c";
+            }
+            else if (av === 'discordant' && va === 'discordant' && loop === 'L') {
+                rvText = "RV (Systemic RV ความดันสูง)";
+                lvBg = "#ffebee"; lvBorder = "#c62828";
+            }
+
+            drawInflowTubes(raX, laX, atriumY, blockW);
+
+            drawAnatomicalBlock(raX, atriumY, blockW, blockH, "RA", "รับเลือดดำจากร่างกาย", raBg, raBorder);
+            drawAnatomicalBlock(laX, atriumY, blockW, blockH, "LA", "รับเลือดแดง/ผสม", laBg, laBorder);
+
+            drawAnatomicalBlock(rvX, ventricleY, blockW, blockH, "RV", rvText, rvBg, rvBorder); 
+            drawAnatomicalBlock(lvX, ventricleY, blockW, blockH, "LV", "ขับเคลื่อนระบบ Systemic", lvBg, lvBorder);
+
+            drawAVValves(raX, laX, rvX, lvX, atriumY + blockH, ventricleY, blockW, av);
+
+            if (hasASD) drawSeptalDefect(raX, laX, atriumY, blockW, blockH, "ASD");
+            if (hasVSD) drawSeptalDefect(rvX, lvX, ventricleY, blockW, blockH, "VSD");
+
+            let aoBotX = 230, paBotX = 90; 
+            if (vessels === 'd-loop') { aoBotX = 90; paBotX = 230; }
+            else if (vessels === 'l-loop') { aoBotX = 70; paBotX = 250; } 
+
+            let aoFinalX = aoBotX + blockW / 2;
+            let paFinalX = paBotX + blockW / 2;
+            let pdaY = 415;
+
+            let aoRootX = 0, aoRootY = ventricleY + blockH;
+            let paRootX = 0, paRootY = ventricleY + blockH;
+
+            // ⚠️ กรณีเฉพาะ d-TGA: LV -> PA (เลือดผสม) และ RV -> Ao (เลือดแดง)
+            if (va === 'discordant' && loop === 'D') {
+                // RV -> Ao (เลือดแดง)
+                drawOutflowTube(rvX + blockW/2, ventricleY + blockH, aoFinalX, 440, "#ff3333", "AO (Aorta)"); 
+                // LV -> PA (เลือดผสม - สีม่วง)
+                drawOutflowTube(lvX + blockW/2, ventricleY + blockH, paFinalX, 440, "#9c27b0", "PA (Mixed)");
+            } else if (va === 'pa_ivs' || va === 'pa_vsd') {
+                drawOutflowTube(lvX + blockW/2, ventricleY + blockH, aoFinalX, 440, aoColor, "AO (Mixed)");
+                drawIsolatedPABranches(paFinalX, 440, paColor, hasPDA ? "PA Branches (Via PDA)" : "PA Branches (No Flow)");
+            } 
+            else if (va === 'dorv') {
+                let rvCenter = rvX + blockW / 2;
+                aoRootX = rvCenter - 25;
+                paRootX = rvCenter + 25;
+                drawOutflowTube(aoRootX, ventricleY + blockH, aoFinalX, 440, aoColor, "AO (Mixed)");
+                drawOutflowTube(paRootX, ventricleY + blockH, paFinalX, 440, paColor, "PA (Mixed)");
+            } 
+            else if (va === 'discordant' && loop === 'L') { // 🩺 ccTGA หรือ VA discordant แบบอื่นๆ ใน L-loop
+                aoRootX = rvX + blockW/2;
+                paRootX = lvX + blockW/2;
+                drawOutflowTube(aoRootX, ventricleY + blockH, aoFinalX, 440, aoColor, "AO");
+                drawOutflowTube(paRootX, ventricleY + blockH, paFinalX, 440, paColor, "PA");
+            } 
+            else { // concordant normal
+                aoRootX = lvX + blockW/2;
+                paRootX = rvX + blockW/2;
+                drawOutflowTube(aoRootX, ventricleY + blockH, aoFinalX, 440, aoColor, "AO");
+                drawOutflowTube(paRootX, ventricleY + blockH, paFinalX, 440, paColor, "PA");
+            }
+
+            if (hasPS && va !== 'pa_ivs' && va !== 'pa_vsd') drawStenosisCircle(paRootX, paRootY + 20, "PS");
+            if (hasAS && va !== 'pa_ivs' && va !== 'pa_vsd') drawStenosisCircle(aoRootX, aoRootY + 20, "AS");
+
+            if (hasPDA) {
+                drawPDAShunt(aoFinalX, paFinalX, pdaY);
+            }
+        }
+
+        function drawAnatomicalBlock(x, y, w, h, title, subtitle, bgColor, borderColor) {
+            ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor; ctx.lineWidth = 4; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
+            ctx.fillStyle = borderColor; ctx.font = "bold 22px Arial"; ctx.textAlign = "center"; ctx.fillText(title, x + w/2, y + h/2 - 5);
+            ctx.fillStyle = "#555"; ctx.font = "10px Arial"; ctx.fillText(subtitle, x + w/2, y + h/2 + 20);
+        }
+
+        function drawInflowTubes(raX, laX, atriumY, blockW) {
+            ctx.lineWidth = 14; ctx.lineCap = "square";
+            ctx.strokeStyle = "#3366ff"; ctx.beginPath(); ctx.moveTo(raX + blockW/3, 40); ctx.lineTo(raX + blockW/3, atriumY); ctx.moveTo(raX + (2*blockW)/3, 40); ctx.lineTo(raX + (2*blockW)/3, atriumY); ctx.stroke();
+            ctx.fillStyle = "#3366ff"; ctx.font = "bold 11px Arial"; ctx.textAlign = "center"; ctx.fillText("SVC / IVC", raX + blockW/2, 30);
+
+            ctx.strokeStyle = "#ff3333"; ctx.beginPath(); ctx.moveTo(laX + blockW/4, 40); ctx.lineTo(laX + blockW/2, 75); ctx.moveTo(laX + (3*blockW)/4, 40); ctx.lineTo(laX + blockW/2, 75); ctx.moveTo(laX + blockW/2, 75); ctx.lineTo(laX + blockW/2, atriumY); ctx.stroke();
+            ctx.fillStyle = "#ff3333"; ctx.font = "bold 11px Arial"; ctx.textAlign = "center"; ctx.fillText("Pulm Veins", laX + blockW/2, 30);
+        }
+
+        function drawAVValves(topX1, topX2, botX1, botX2, topY, botY, blockW, mode) {
+            ctx.strokeStyle = "#455a64"; ctx.lineWidth = 4; ctx.setLineDash([5, 5]); ctx.beginPath();
+            if (mode === 'concordant') {
+                ctx.moveTo(topX1 + blockW/2, topY); ctx.lineTo(botX1 + blockW/2, botY);
+                ctx.moveTo(topX2 + blockW/2, topY); ctx.lineTo(botX2 + blockW/2, botY);
+            } else {
+                ctx.moveTo(topX1 + blockW/2, topY); ctx.lineTo(botX2 + blockW/2, botY);
+                ctx.moveTo(topX2 + blockW/2, topY); ctx.lineTo(botX1 + blockW/2, botY);
+            }
+            ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        function drawSeptalDefect(leftX, rightX, yCoord, blockW, blockH, label) {
+            let leftBoxRightEdge = Math.min(leftX, rightX) + blockW; let rightBoxLeftEdge = Math.max(leftX, rightX); let midX = (leftBoxRightEdge + rightBoxLeftEdge) / 2; let midY = yCoord + blockH / 2;
+            ctx.strokeStyle = "#ffa726"; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(leftBoxRightEdge - 15, midY); ctx.lineTo(rightBoxLeftEdge + 15, midY); ctx.stroke();
+            ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#e65100"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(midX, midY, 10, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#e65100"; ctx.font = "bold 9px Arial"; ctx.textAlign = "center"; ctx.fillText(label, midX, midY + 3);
+        }
+
+        function drawStenosisCircle(x, y, label) {
+            ctx.save();
+            ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#d84315"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 11, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = "#d84315"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 7, y + 7); ctx.lineTo(x + 7, y - 7); ctx.stroke();
+            ctx.fillStyle = "#c62828"; ctx.font = "bold 13px Arial"; ctx.textAlign = "left"; ctx.fillText(label, x + 22, y + 4); 
+            ctx.restore();
+        }
+
+        function drawOutflowTube(startX, startY, endX, endY, color, label) {
+            ctx.strokeStyle = color; ctx.lineWidth = 14; ctx.lineCap = "square"; ctx.beginPath(); ctx.moveTo(startX, startY);
+            ctx.bezierCurveTo(startX, (startY + endY)/2, endX, (startY + endY)/2 - 30, endX, endY);
+            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(endX, endY); ctx.lineTo(endX - 20, endY + 25); ctx.moveTo(endX, endY); ctx.lineTo(endX + 20, endY + 25); ctx.stroke();
+            ctx.fillStyle = color; ctx.fillRect(endX - 45, endY - 12, 90, 18);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 11px Arial"; ctx.textAlign = "center"; ctx.fillText(label, endX, endY + 1);
+        }
+
+        function drawIsolatedPABranches(endX, endY, color, label) {
+            ctx.strokeStyle = color; ctx.lineWidth = 14; ctx.lineCap = "square"; ctx.beginPath(); ctx.moveTo(endX, endY - 35); ctx.lineTo(endX, endY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(endX, endY); ctx.lineTo(endX - 20, endY + 25); ctx.moveTo(endX, endY); ctx.lineTo(endX + 20, endY + 25); ctx.stroke();
+            ctx.fillStyle = color; ctx.fillRect(endX - 55, endY - 12, 110, 18);
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center"; ctx.fillText(label, endX, endY + 1);
+        }
+
+        function drawPDAShunt(aoX, paX, y) {
+            let startX = Math.min(aoX, paX); let endX = Math.max(aoX, paX); let midX = (startX + endX) / 2;
+            ctx.strokeStyle = "#ffa726"; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke();
+            ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#e65100"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(midX, y, 16, 8, 0, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#e65100"; ctx.font = "bold 8px Arial"; ctx.textAlign = "center"; ctx.fillText("PDA", midX, y + 3);
+        }
+
+        applyPreset('normal');
+    </script>
+</body>
+</html>
